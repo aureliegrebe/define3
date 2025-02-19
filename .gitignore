@@ -1,7 +1,7 @@
-/target/
+target/
 **/*.rs.bk
 Cargo.lock
-/target/
-**/*.rs.bk
-
+modules/**
+*.bz2
+*.xml
 Session.vim

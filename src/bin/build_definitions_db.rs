@@ -1,18 +1,18 @@
 extern crate define3;
+extern crate getopts;
 extern crate regex;
 extern crate rusqlite;
-extern crate getopts;
 
-use define3::{Module, Template, Word};
-use define3::PageContent;
 use define3::parse_wikitext::parse_wikitext;
+use define3::PageContent;
+use define3::{Module, Template, Word};
 
 use getopts::Options;
 use regex::Regex;
 use rusqlite::{Connection, Transaction};
 use std::collections::{HashMap, HashSet};
-use std::fs::File;
 use std::fs;
+use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
@@ -28,7 +28,10 @@ fn main() {
         "Japanese",
         "Korean",
         "Lojban",
-    ].iter().cloned().collect();
+    ]
+    .iter()
+    .cloned()
+    .collect();
 
     // TODO: figure out POS list automatically
     let parts_of_speech: HashSet<&str> = [
@@ -51,14 +54,20 @@ fn main() {
         "Rafsi",
         "Romanization",
         "Verb",
-    ].iter().cloned().collect();
+    ]
+    .iter()
+    .cloned()
+    .collect();
 
     let args: Vec<String> = std::env::args().collect();
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help text");
     let matches = opts.parse(&args[1..]).unwrap();
     if matches.opt_present("h") || matches.free.len() != 1 {
-        let brief = format!("Usage: {} PATH_TO_enwiktionary-YYYYMMDD-pages-meta-current.xml [options]", args[0]);
+        let brief = format!(
+            "Usage: {} PATH_TO_enwiktionary-YYYYMMDD-pages-meta-current.xml [options]",
+            args[0]
+        );
         print!("{}", opts.usage(&brief));
         return;
     }
@@ -88,7 +97,8 @@ fn main() {
              content        text not null
          )",
         [],
-    ).unwrap();
+    )
+    .unwrap();
 
     tx.execute("DROP TABLE IF EXISTS modules", []).unwrap();
     tx.execute(
@@ -97,7 +107,8 @@ fn main() {
              content        text not null
          )",
         [],
-    ).unwrap();
+    )
+    .unwrap();
 
     let re_noinclude = Regex::new(r"<noinclude>(?P<text>(?s:.)*?)</noinclude>").unwrap();
     let re_includeonly = Regex::new(r"<includeonly>(?P<text>(?s:.)*?)</includeonly>").unwrap();
@@ -123,14 +134,16 @@ fn main() {
             tx.execute(
                 "insert into templates (name, content) values (?1, ?2)",
                 &[&title, &content.as_str()],
-            ).unwrap();
+            )
+            .unwrap();
             templates.insert(title.to_owned(), content);
         } else if page.title.starts_with("Module:") {
             let title = &page.title[7..];
             tx.execute(
                 "insert into modules (name, content) values (?1, ?2)",
                 [&title, &page.content.as_str()],
-            ).unwrap();
+            )
+            .unwrap();
 
             println!("Saved module: {}", page.title);
             let path = format!("modules/{}.lua", page.title);
@@ -153,7 +166,8 @@ fn main() {
              definition     text not null
          )",
         [],
-    ).unwrap();
+    )
+    .unwrap();
 
     define3::parse_xml::for_pages(&xml_path, |page| {
         let page_content = match page.title.split(':').next() {
@@ -196,7 +210,8 @@ fn main() {
                             &meaning.part_of_speech,
                             &defn.into_owned(),
                         ],
-                    ).unwrap();
+                    )
+                    .unwrap();
                 }
             }
             _ => (),
@@ -207,7 +222,8 @@ fn main() {
         "create index words_name_idx on words(name);
          create index words_language_idx on words(language);
          create index words_part_of_speech_idx on words(part_of_speech);",
-    ).unwrap();
+    )
+    .unwrap();
 
     tx.commit().unwrap();
 }

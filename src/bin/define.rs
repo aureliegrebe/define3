@@ -1,10 +1,10 @@
 extern crate colored;
 extern crate define3;
 extern crate getopts;
+extern crate nom;
 extern crate regex;
 extern crate rusqlite;
 extern crate textwrap;
-extern crate nom;
 
 use define3::Meaning;
 
@@ -20,14 +20,18 @@ fn get_defns_by_lang(
     conn: &Connection,
     word: &str,
 ) -> Box<BTreeMap<String, BTreeMap<String, Vec<String>>>> {
-    let mut stmt = conn.prepare(
-        "SELECT language, part_of_speech, definition FROM words WHERE name = ?1",
-    ).unwrap();
-    let word_iter = stmt.query_map(&[&word], |row| Ok (Meaning {
-        language: row.get(0).unwrap(),
-        part_of_speech: row.get(1).unwrap(),
-        definition: row.get(2).unwrap(),
-    })).unwrap();
+    let mut stmt = conn
+        .prepare("SELECT language, part_of_speech, definition FROM words WHERE name = ?1")
+        .unwrap();
+    let word_iter = stmt
+        .query_map(&[&word], |row| {
+            Ok(Meaning {
+                language: row.get(0).unwrap(),
+                part_of_speech: row.get(1).unwrap(),
+                definition: row.get(2).unwrap(),
+            })
+        })
+        .unwrap();
 
     let mut langs: BTreeMap<String, BTreeMap<String, Vec<String>>> = BTreeMap::new();
 
@@ -68,24 +72,15 @@ fn replace_template(_conn: &Connection, caps: &Captures) -> String {
     //    _ => expand_template(conn, &elems)
     //}
     match elems[0] {
-        "," =>
-            ",".to_owned(),
-        "ngd" | "unsupported" | "non-gloss definition" =>
-            elems[1].to_owned(),
-        "alternative form of" =>
-            format!("Alternative form of {}", elems[1]),
-        "ja-romanization of" =>
-            format!("Rōmaji transcription of {}", elems[1]),
-        "sumti" =>
-            format!("x{}", elems[1]),
-        "ja-def" =>
-            format!("{}:", elems[1]),
-        "qualifier" =>
-            format!("({})", elems[1]),
-        "lb" =>
-            format!("({})", elems[2]),
-        "m" | "l" =>
-            elems[2].to_owned(),
+        "," => ",".to_owned(),
+        "ngd" | "unsupported" | "non-gloss definition" => elems[1].to_owned(),
+        "alternative form of" => format!("Alternative form of {}", elems[1]),
+        "ja-romanization of" => format!("Rōmaji transcription of {}", elems[1]),
+        "sumti" => format!("x{}", elems[1]),
+        "ja-def" => format!("{}:", elems[1]),
+        "qualifier" => format!("({})", elems[1]),
+        "lb" => format!("({})", elems[2]),
+        "m" | "l" => elems[2].to_owned(),
         _ => caps.get(0).unwrap().as_str().to_owned(),
     }
 }
@@ -139,27 +134,27 @@ fn main() {
     let conn = Connection::open(Path::new(&sqlite_path)).unwrap();
 
     let all_langs = *get_defns_by_lang(&conn, &matches.free[0]);
-    let langs =
-        match matches.opt_str("l") {
-            None => all_langs,
-            Some(lang) => {
-                let mut result = BTreeMap::new();
-                for &result_for_lang in all_langs.get(&lang).iter() {
-                    result.insert(lang.clone(), result_for_lang.clone());
-                }
-                result
-            },
+    let langs = match matches.opt_str("l") {
+        None => all_langs,
+        Some(lang) => {
+            let mut result = BTreeMap::new();
+            for &result_for_lang in all_langs.get(&lang).iter() {
+                result.insert(lang.clone(), result_for_lang.clone());
+            }
+            result
         }
-    ;
+    };
     print_words(&langs, |s| {
         let replace_template = |caps: &Captures| -> String { replace_template(&conn, caps) };
         let mut result = s.to_owned();
         if !matches.opt_present("r") {
             loop {
-                let result_ = re_template.replace_all(&result, &replace_template).to_string();
+                let result_ = re_template
+                    .replace_all(&result, &replace_template)
+                    .to_string();
                 //println!("{}", result_);
                 if result == result_ {
-                    break
+                    break;
                 }
                 result = result_;
             }

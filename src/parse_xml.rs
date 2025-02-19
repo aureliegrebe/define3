@@ -1,10 +1,8 @@
 extern crate quick_xml;
+use parse_xml::quick_xml::{events::Event, Reader};
 
-use parse_xml::quick_xml::Reader;
-use parse_xml::quick_xml::events::Event;
-
-use std::path::Path;
 use std::io::BufRead;
+use std::path::Path;
 
 use Page;
 

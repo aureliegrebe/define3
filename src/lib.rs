@@ -1,5 +1,5 @@
-pub mod parse_xml;
 pub mod parse_wikitext;
+pub mod parse_xml;
 
 #[derive(Debug)]
 pub struct Meaning {

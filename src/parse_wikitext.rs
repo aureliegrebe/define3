@@ -96,31 +96,63 @@ pub fn parse_wikitext(
     let mut result: Vec<Meaning> = Vec::new();
     let mut context_stack: ContextStack = ContextStack::new();
 
-    let stack_apply = |context_stack: &mut ContextStack, wiki_context: &dyn Fn(String) -> WikiContext, line: &str, slice: &Option<&str>| {
-        slice.map_or_else(|| {
-            println!("Could not parse line: {}", line);
-        }, |slice| {
-            context_stack.apply(
-                wiki_context(slice.to_owned()),
-                languages,
-                parts_of_speech,
-            );
-        });
+    let stack_apply = |context_stack: &mut ContextStack,
+                       wiki_context: &dyn Fn(String) -> WikiContext,
+                       line: &str,
+                       slice: &Option<&str>| {
+        slice.map_or_else(
+            || {
+                println!("Could not parse line: {}", line);
+            },
+            |slice| {
+                context_stack.apply(wiki_context(slice.to_owned()), languages, parts_of_speech);
+            },
+        );
     };
 
     for line in text.lines() {
         if line.starts_with("======") && line.len() > 12 {
-            stack_apply(&mut context_stack, &|x| Heading6(x), line, &line.get(6..line.len()-6));
+            stack_apply(
+                &mut context_stack,
+                &|x| Heading6(x),
+                line,
+                &line.get(6..line.len() - 6),
+            );
         } else if line.starts_with("=====") && line.len() > 10 {
-            stack_apply(&mut context_stack, &|x| Heading5(x), line, &line.get(5..line.len()-5));
+            stack_apply(
+                &mut context_stack,
+                &|x| Heading5(x),
+                line,
+                &line.get(5..line.len() - 5),
+            );
         } else if line.starts_with("====") && line.len() > 8 {
-            stack_apply(&mut context_stack, &|x| Heading4(x), line, &line.get(4..line.len()-4));
+            stack_apply(
+                &mut context_stack,
+                &|x| Heading4(x),
+                line,
+                &line.get(4..line.len() - 4),
+            );
         } else if line.starts_with("===") && line.len() > 6 {
-            stack_apply(&mut context_stack, &|x| Heading3(x), line, &line.get(3..line.len()-3));
+            stack_apply(
+                &mut context_stack,
+                &|x| Heading3(x),
+                line,
+                &line.get(3..line.len() - 3),
+            );
         } else if line.starts_with("==") && line.len() > 4 {
-            stack_apply(&mut context_stack, &|x| Heading2(x), line, &line.get(2..line.len()-2));
+            stack_apply(
+                &mut context_stack,
+                &|x| Heading2(x),
+                line,
+                &line.get(2..line.len() - 2),
+            );
         } else if line.starts_with("=") && line.len() > 2 {
-            stack_apply(&mut context_stack, &|x| Heading1(x), line, &line.get(1..line.len()-1));
+            stack_apply(
+                &mut context_stack,
+                &|x| Heading1(x),
+                line,
+                &line.get(1..line.len() - 1),
+            );
         } else if line.starts_with("# ") {
             context_stack.language.as_ref().and_then(|language| {
                 context_stack.part_of_speech.as_ref().map(|part_of_speech| {

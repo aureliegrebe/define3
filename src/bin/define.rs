@@ -51,6 +51,7 @@ fn get_defns_by_lang(
 // functions and often call out into Lua code.
 // https://www.mediawiki.org/wiki/Help:Extension:ParserFunctions
 // https://www.mediawiki.org/wiki/Extension:Scribunto
+#[allow(dead_code)]
 fn expand_template(conn: &Connection, args: &[&str]) -> String {
     fn get_template_content(conn: &Connection, name: &str) -> String {
         let result = conn.query_row(
@@ -63,6 +64,7 @@ fn expand_template(conn: &Connection, args: &[&str]) -> String {
     }
     get_template_content(conn, args[0])
 }
+#[warn(dead_code)]
 
 // For now, we just hardcode a couple common templates.
 fn replace_template(_conn: &Connection, caps: &Captures) -> String {

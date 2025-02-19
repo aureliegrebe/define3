@@ -133,7 +133,7 @@ fn main() {
             ).unwrap();
 
             println!("Saved module: {}", page.title);
-            let path = format!("/trove/data/enwikt/modules/{}.lua", page.title);
+            let path = format!("modules/{}.lua", page.title);
             let path = Path::new(&path);
             fs::create_dir_all(path.parent().unwrap()).unwrap();
             let mut file = File::create(path).unwrap();

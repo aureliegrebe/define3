@@ -12,18 +12,18 @@ fn parse_revision<B: BufRead>(reader: &mut Reader<B>) -> Option<String> {
     let mut buf = Vec::new();
     let mut result = None;
     loop {
-        match reader.read_event(&mut buf) {
-            Ok(Event::Start(ref e)) if e.name() == b"text" => {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Start(ref e)) if e.name().as_ref() == b"text" => {
                 let mut buf = Vec::new();
-                match reader.read_event(&mut buf) {
+                match reader.read_event_into(&mut buf) {
                     Ok(Event::Text(e)) => {
-                        let text = e.unescape_and_decode(&reader).unwrap();
+                        let text = e.unescape().unwrap().to_string();
                         result = Some(text);
                     }
                     _ => (),
                 }
             }
-            Ok(Event::End(ref e)) if e.name() == b"revision" => break,
+            Ok(Event::End(ref e)) if e.name().as_ref() == b"revision" => break,
             _ => (),
         }
     }
@@ -35,14 +35,12 @@ pub fn parse_page<B: BufRead>(mut reader: &mut Reader<B>) -> Option<Page> {
     let mut title = None;
     let mut content = None;
     loop {
-        match reader.read_event(&mut buf) {
+        match reader.read_event_into(&mut buf) {
             Ok(Event::Start(ref e)) => {
                 let mut buf = Vec::new();
-                match e.name() {
-                    b"title" => match reader.read_event(&mut buf) {
-                        Ok(Event::Text(e)) => {
-                            title = Some(e.unescape_and_decode(&reader).unwrap().clone())
-                        }
+                match e.name().as_ref() {
+                    b"title" => match reader.read_event_into(&mut buf) {
+                        Ok(Event::Text(e)) => title = Some(e.unescape().unwrap().to_string()),
                         _ => (),
                     },
                     b"revision" => {
@@ -51,7 +49,7 @@ pub fn parse_page<B: BufRead>(mut reader: &mut Reader<B>) -> Option<Page> {
                     _ => (),
                 }
             }
-            Ok(Event::End(ref e)) if e.name() == b"page" => break,
+            Ok(Event::End(ref e)) if e.name().as_ref() == b"page" => break,
             _ => (),
         }
     }
@@ -66,8 +64,8 @@ where
     let mut buf = Vec::new();
     let mut reader = Reader::from_file(Path::new(filename)).unwrap();
     'read_words: loop {
-        match reader.read_event(&mut buf) {
-            Ok(Event::Start(ref e)) => match e.name() {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Start(ref e)) => match e.name().as_ref() {
                 b"page" => {
                     let page = parse_page(&mut reader);
                     page.map(|page| f(page));

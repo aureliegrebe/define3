@@ -163,6 +163,7 @@ fn main() {
              name           text not null,
              language       text not null,
              part_of_speech text not null,
+             gender         text,
              definition     text not null
          )",
         [],
@@ -202,12 +203,13 @@ fn main() {
                     let defn = re_bold.replace_all(&defn, "$text");
                     let defn = re_italic.replace_all(&defn, "$text");
                     tx.execute(
-                        "insert into words (name, language, part_of_speech, definition)
-                 values (?1, ?2, ?3, ?4)",
+                        "insert into words (name, language, part_of_speech, gender, definition)
+                 values (?1, ?2, ?3, ?4, ?5)",
                         &[
                             &word.name,
                             &meaning.language,
                             &meaning.part_of_speech,
+                            meaning.gender.as_ref().unwrap_or(&"".to_string()),
                             &defn.into_owned(),
                         ],
                     )

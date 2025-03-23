@@ -6,6 +6,7 @@ pub struct Meaning {
     pub language: String,
     pub part_of_speech: String,
     pub definition: String,
+    pub gender: Option<String>,
 }
 
 #[derive(Debug)]

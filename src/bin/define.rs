@@ -19,9 +19,9 @@ use std::path::Path;
 fn get_defns_by_lang(
     conn: &Connection,
     word: &str,
-) -> Box<BTreeMap<String, BTreeMap<String, Vec<String>>>> {
+) -> Box<BTreeMap<String, BTreeMap<(String, Option<String>), Vec<String>>>> {
     let mut stmt = conn
-        .prepare("SELECT language, part_of_speech, definition FROM words WHERE name = ?1")
+        .prepare("SELECT language, part_of_speech, definition, gender FROM words WHERE name = ?1")
         .unwrap();
     let word_iter = stmt
         .query_map(&[&word], |row| {
@@ -29,18 +29,20 @@ fn get_defns_by_lang(
                 language: row.get(0).unwrap(),
                 part_of_speech: row.get(1).unwrap(),
                 definition: row.get(2).unwrap(),
+                gender: row.get(3).unwrap(),
             })
         })
         .unwrap();
 
-    let mut langs: BTreeMap<String, BTreeMap<String, Vec<String>>> = BTreeMap::new();
+    let mut langs: BTreeMap<String, BTreeMap<(String, Option<String>), Vec<String>>> =
+        BTreeMap::new();
 
     for meaning in word_iter {
         let meaning = meaning.unwrap();
         langs
             .entry(meaning.language)
             .or_insert(BTreeMap::new())
-            .entry(meaning.part_of_speech)
+            .entry((meaning.part_of_speech, meaning.gender))
             .or_insert(Vec::new())
             .push(meaning.definition);
     }
@@ -87,8 +89,10 @@ fn replace_template(_conn: &Connection, caps: &Captures) -> String {
     }
 }
 
-fn print_words<F>(langs: &BTreeMap<String, BTreeMap<String, Vec<String>>>, mut format: F)
-where
+fn print_words<F>(
+    langs: &BTreeMap<String, BTreeMap<(String, Option<String>), Vec<String>>>,
+    mut format: F,
+) where
     F: FnMut(&str) -> String,
 {
     let textwrap_opts = textwrap::Options::new(80)
@@ -97,8 +101,12 @@ where
 
     for (lang, poses) in langs {
         println!("{}", lang.green().bold());
-        for (pos, defns) in poses {
-            println!("  {}", pos.white());
+        for ((pos, gender), defns) in poses {
+            println!(
+                "  {} {}",
+                pos.white(),
+                gender.clone().unwrap_or("".to_string()).italic()
+            );
             for defn in defns {
                 let defn = format(defn);
                 let defn = textwrap::fill(&defn, &textwrap_opts);
